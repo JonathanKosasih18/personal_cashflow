@@ -63,7 +63,58 @@ const login = async (req, res) => {
     }
 };
 
+const updateUser = async (req, res) => {
+    const { id } = req.params; 
+    const { username, email } = req.body;
+
+    if (!username || !email) {
+        return baseResponse(res, false, 400, 'Username and email are required');
+    }
+
+    try {
+        const userToUpdate = await userRepository.getUserById(id);
+        if (!userToUpdate) {
+            return baseResponse(res, false, 404, 'User not found');
+        }
+
+        if (!emailRegex.test(email)) {
+            return baseResponse(res, false, 400, 'Invalid email format');
+        }
+
+        if (email !== userToUpdate.email) {
+            const existingUser = await userRepository.getUserByEmail(email);
+            if (existingUser) {
+                return baseResponse(res, false, 400, 'Email already in use by another account');
+            }
+        }
+
+        const updatedUser = await userRepository.updateUser(id, username, email);
+        return baseResponse(res, true, 200, 'User updated successfully', updatedUser);
+
+    } catch (error) {
+        return baseResponse(res, false, 500, 'Server error', error.message);
+    }
+};
+
+const deleteAccount = async (req, res) => {
+    const { id } = req.params;
+
+    try {
+        const deletedUser = await userRepository.deleteUser(id);
+        
+        if (!deletedUser) {
+            return baseResponse(res, false, 404, 'User not found');
+        }
+
+        return baseResponse(res, true, 200, 'User deleted successfully');
+    } catch (error) {
+        return baseResponse(res, false, 500, 'Server error', error.message);
+    }
+};
+
 module.exports = {
     register,
     login,
+    updateUser,
+    deleteAccount,
 };
