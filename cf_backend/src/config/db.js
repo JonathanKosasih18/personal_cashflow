@@ -15,7 +15,7 @@ pool.connect((err, client, release) => {
     if (err) {
         return console.error('❌ Error acquiring client', err.stack);
     }
-    console.log('✅ Connected to Neon PostgreSQL successfully');
+    console.log('✅ Connected to Neon Database successfully');
     release();
 });
 

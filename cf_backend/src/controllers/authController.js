@@ -1,5 +1,5 @@
 const userRepository = require('../repositories/userRepository');
-const baseResponse = require('../utils/baseResponse');
+const baseResponse = require('../utils/baseResponseUtils');
 const bcrypt = require('bcrypt');
 
 const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -35,6 +35,35 @@ const register = async (req, res) => {
     }
 };
 
+const login = async (req, res) => {
+    const { email, password } = req.body;
+
+    if (!email || !password) {
+        return baseResponse(res, false, 400, 'Email and password are required');
+    }
+
+    try {
+        const user = await userRepository.getUserByEmail(email);
+        if (!user) {
+            return baseResponse(res, false, 401, 'Invalid email or password');
+        }
+
+        const isMatch = await bcrypt.compare(password, user.password_hash);
+        if (!isMatch) {
+            return baseResponse(res, false, 401, 'Invalid email or password');
+        }
+
+        const keysToRemove = ['password_hash', 'created_at', 'id'];
+
+        keysToRemove.forEach(key => delete user[key]);
+
+        return baseResponse(res, true, 200, 'Login successful', user);
+    } catch (error) {
+        return baseResponse(res, false, 500, 'Server error');
+    }
+};
+
 module.exports = {
     register,
+    login,
 };
