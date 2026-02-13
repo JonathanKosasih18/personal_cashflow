@@ -30,7 +30,7 @@ const getUserById = async (id) => {
 const registerUser = async (username, email, password) => {
     try {
         const result = await db.query(
-            "INSERT INTO users (username, email, password_hash) VALUES ($1, $2, $3) RETURNING username, email", 
+            "INSERT INTO users (username, email, password_hash) VALUES ($1, $2, $3) RETURNING username, email, created_at", 
             [username, email, password]
         );
         return result.rows[0];

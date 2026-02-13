@@ -1,5 +1,6 @@
 const userRepository = require('../repositories/userRepository');
 const baseResponse = require('../utils/baseResponseUtils');
+const generateToken = require('../utils/jwtUtils');
 const bcrypt = require('bcrypt');
 
 const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -29,7 +30,10 @@ const register = async (req, res) => {
 
         const hashedPassword = await bcrypt.hash(password, saltRounds);
         const newUser = await userRepository.registerUser(username, email, hashedPassword);
-        return baseResponse(res, true, 201, 'User registered successfully', newUser);
+
+        const token = generateToken(newUser.id);
+
+        return baseResponse(res, true, 201, 'User registered successfully', { user: newUser, token });
     } catch (error) {
         return baseResponse(res, false, 500, 'Server error');
     }
@@ -53,18 +57,19 @@ const login = async (req, res) => {
             return baseResponse(res, false, 401, 'Invalid email or password');
         }
 
-        const keysToRemove = ['password_hash', 'created_at', 'id'];
-
+        const keysToRemove = ['password_hash', 'created_at'];
         keysToRemove.forEach(key => delete user[key]);
 
-        return baseResponse(res, true, 200, 'Login successful', user);
+        const token = generateToken(user.id);
+
+        return baseResponse(res, true, 200, 'Login successful', { user, token });
     } catch (error) {
         return baseResponse(res, false, 500, 'Server error');
     }
 };
 
 const updateUser = async (req, res) => {
-    const { id } = req.params; 
+    const id = req.user.id;
     const { username, email } = req.body;
 
     if (!username || !email) {
@@ -97,7 +102,7 @@ const updateUser = async (req, res) => {
 };
 
 const deleteAccount = async (req, res) => {
-    const { id } = req.params;
+    const id = req.user.id;
 
     try {
         const deletedUser = await userRepository.deleteUser(id);
